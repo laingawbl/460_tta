@@ -1,3 +1,6 @@
 .idea/
 cmake-build-*/
 CMakeLists.txt
+*.o
+*.elf
+*.flash.hex

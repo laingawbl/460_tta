@@ -2,7 +2,7 @@
 // Created by auriga on 11/03/19.
 //
 
-#include "../tta.h"
+#include "../src/tta.h"
 
 /*
  * Expected result: the OS aborts with a "deadline missed" error

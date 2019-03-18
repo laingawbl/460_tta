@@ -9,7 +9,6 @@ This project builds off the TTA RTOS from Project 2, unless it is very bad; then
 - Build the project using `./build.sh` and the tests using `./build_test.sh [test file]`
 
 ## TODOs
-- Move the sources to `src/`
 - Move the Proj2 tests to some `rtos_test/` file? How are we going to test the Proj3 stuff if it's sitting on a roomba?
 
 ## Resources

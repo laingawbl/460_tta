@@ -2,7 +2,7 @@
 // Created by auriga on 11/03/19.
 //
 
-#include "../tta.h"
+#include "../src/tta.h"
 
 void uart_sendstr(char *str);
 

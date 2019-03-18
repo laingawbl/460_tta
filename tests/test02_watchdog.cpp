@@ -2,7 +2,7 @@
 // Created by auriga on 11/03/19.
 //
 
-#include "../tta.h"
+#include "../src/tta.h"
 
 /*
  * Expected result: the watchdog timer fires and its interrupt aborts the OS after longRun exits
