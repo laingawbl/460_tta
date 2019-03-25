@@ -2,7 +2,7 @@
 // Created by auriga on 11/03/19.
 //
 
-#include "../src/tta.h"
+#include "../src/rtos/tta.h"
 
 /*
  * Expected result: the "TCNT start" message prints and nothing else
