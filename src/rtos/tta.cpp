@@ -15,7 +15,7 @@
 #endif
 
 #ifdef __UART__
-#include "uart.h"
+#include "../uart/uart.h"
 #endif
 
 // Forward declaration for ISRs
