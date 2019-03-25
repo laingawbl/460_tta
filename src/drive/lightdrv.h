@@ -1,4 +1,6 @@
-/**
+#ifndef __LIGHTDRV_H__
+#define __LIGHTDRV_H__
+ /**
  * @file lightdrv.h
  * @brief light sensor driver
  *
@@ -11,10 +13,12 @@
  * @brief start the LIGHTDRV task.
  * TODO: how often should LIGHTDRV run?
  */
-void _lightdrvTask();
+void lightDriverStart();
 
 /**
  * @brief get the latest reading from the LIGHTDRV task.
  * @return true if the cone is being hit; false, if not
  */
-bool lightHit();
+bool readLight();
+
+#endif
