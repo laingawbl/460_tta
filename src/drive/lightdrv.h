@@ -11,9 +11,11 @@
 
 #include <avr/io.h>
 
-#define LIGHTDRV_PIN    PORTF0 //Arduino MEGA Analog Pin 8
+#define LIGHTDRV_PIN    PORTF0 //Arduino MEGA Analog Pin A0
 #define LIGHTDRV_INPUT  PINF
 #define LIGHTDRV_DDR    DDRF
+
+#define LIGHTDRV_COMPARE    150 //TODO: taken from Project 1, tuned for uncovered sensor; needs tweaking
 
 /**
  * @brief start the LIGHTDRV task.
