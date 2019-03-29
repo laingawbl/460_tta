@@ -9,6 +9,12 @@
  * is the task of DEATHMON).
  */
 
+#include <avr/io.h>
+
+#define LIGHTDRV_PIN    PORTA0 //Arduino MEGA Pin 22
+#define LIGHTDRV_INPUT  PINA
+#define LIGHTDRV_DDR    DDRA
+
 /**
  * @brief start the LIGHTDRV task.
  * TODO: how often should LIGHTDRV run?

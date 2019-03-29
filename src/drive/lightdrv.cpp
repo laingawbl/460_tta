@@ -7,24 +7,28 @@
 
 static TaskHandle lightDrvTaskHandle = nullptr;
 
-struct {
-    bool hit
-} lightDrvReading;
+struct lightDrvReading {
+    bool hit;
+};
 
 void _lightDrvTask(void * state){
-    // (lightDrvReading)(state).hit = ...
+    ((struct lightDrvReading *) state)->hit = LIGHTDRV_INPUT & (1<<LIGHTDRV_PIN);
 }
 
 void lightDriverStart(){
+    // set pin data direction to 0 (input)
+    LIGHTDRV_DDR &= ~(1<<LIGHTDRV_PIN);
+
     // start only one instance of LIGHTDRV
-    if(!lightDrvTaskHandleTask)
-        OS_CreateTask(_lightDrvTask, nullptr, {period = 50, offset = 0});
+    if(!lightDrvTaskHandle)
+        OS_CreateTask(_lightDrvTask, nullptr, {50, 0});
 }
 
 bool readLight(){
     StateHandle handle = OS_GetTaskState(lightDrvTaskHandle);
     if(handle)
-        return (lightDrvReading)(->state).hit;
+        // ... return the "hit" field, of the casted-to-struct state member, of the stateBlock for which we have a handle
+        return ((struct lightDrvReading *) handle->state)->hit;
 
     //TODO: raise application-level error if we can't retrieve the LIGHTDRV state handle
     return true;
