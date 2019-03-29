@@ -28,6 +28,7 @@ bool readLight(){
     StateHandle handle = OS_GetTaskState(lightDrvTaskHandle);
     if(handle)
         // ... return the "hit" field, of the casted-to-struct state member, of the stateBlock for which we have a handle
+        //TODO: actually read this, right now it'll basically always return true
         return ((struct lightDrvReading *) handle->state)->hit;
 
     //TODO: raise application-level error if we can't retrieve the LIGHTDRV state handle

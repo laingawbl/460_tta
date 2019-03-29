@@ -11,9 +11,9 @@
 
 #include <avr/io.h>
 
-#define LIGHTDRV_PIN    PORTA0 //Arduino MEGA Pin 22
-#define LIGHTDRV_INPUT  PINA
-#define LIGHTDRV_DDR    DDRA
+#define LIGHTDRV_PIN    PORTF0 //Arduino MEGA Analog Pin 8
+#define LIGHTDRV_INPUT  PINF
+#define LIGHTDRV_DDR    DDRF
 
 /**
  * @brief start the LIGHTDRV task.
