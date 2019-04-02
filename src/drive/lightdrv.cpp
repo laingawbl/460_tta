@@ -3,19 +3,19 @@
 //
 
 #include "lightdrv.h"
-#include "../uart/uart.h"
 #include "../rtos/tta.h"
 
 static TaskHandle lightDrvTaskHandle = nullptr;
 
-struct lightDrvReading {
+typedef struct {
     bool hit = false;
     int rawVal = 0;
-};
+} lightReading_t;
 
 void _lightDrvTask(void * state){
     uint8_t high, low;
     int result;
+    lightReading_t *reading = (lightReading_t *) state;
 
     // select channel (mod 8, as high bit is handled by MUX5)
     ADMUX |= (LIGHTDRV_PIN & 0x07);
@@ -30,13 +30,8 @@ void _lightDrvTask(void * state){
     high = ADCH;
     result = (high << 8) | low;
 
-    char rawLevelStr[7];
-    utos(result, rawLevelStr);
-    uart_sendstr(rawLevelStr);
-    uart_sendstr("\t");
-
-    ((struct lightDrvReading *) state)->rawVal = 42;
-    ((struct lightDrvReading *) state)->hit = (result > LIGHTDRV_COMPARE);
+    reading->rawVal = result;
+    reading->hit = (result > LIGHTDRV_COMPARE);
 }
 
 void lightDriverStart(){
@@ -51,13 +46,15 @@ void lightDriverStart(){
 
     // start only one instance of LIGHTDRV
     if(!lightDrvTaskHandle)
-        OS_CreateTask(_lightDrvTask, nullptr, {50, 0});
+        lightDrvTaskHandle = OS_CreateTask(_lightDrvTask, nullptr, {50, 0});
 }
 
 bool readLight(){
     StateHandle handle = OS_GetTaskState(lightDrvTaskHandle);
-    if(handle)
-        return ((struct lightDrvReading *) handle->state)->hit;
+    if(handle) {
+        lightReading_t *reading = (lightReading_t *) (handle->state);
+        return reading->hit;
+    }
 
     //TODO: raise application-level error if we can't retrieve the LIGHTDRV state handle
     return false;
@@ -65,8 +62,10 @@ bool readLight(){
 
 int readLightLevel(){
     StateHandle handle = OS_GetTaskState(lightDrvTaskHandle);
-    if(handle)
-        return ((struct lightDrvReading *) handle->state)->rawVal;
+    if(handle) {
+        lightReading_t *reading = (lightReading_t *) handle->state;
+        return reading->rawVal;
+    }
 
     //TODO: raise application-level error if we can't retrieve the LIGHTDRV state handle
     return -1;
