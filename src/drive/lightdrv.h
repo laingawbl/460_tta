@@ -29,4 +29,6 @@ void lightDriverStart();
  */
 bool readLight();
 
+int readLightLevel();
+
 #endif
