@@ -6,8 +6,8 @@
  *      Modified: lainga
  */
 
-#ifndef ROOMBA_SCI_H_
-#define ROOMBA_SCI_H_
+#ifndef __ROOMBA_SCI_H__
+#define __ROOMBA_SCI_H__
 
 /*****											Commands										*****/
 

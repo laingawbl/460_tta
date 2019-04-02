@@ -12,15 +12,10 @@
 
 #include<avr/io.h>
 
-#define IRDRV_PIN   PORTA1 // Arduino MEGA Pin 23
-#define IRDRV_INPUT PINA
-#define IRDRV_DDR   PORTA
-
 /**
  * TODO write the doxy!!
- * @param state
  */
-void irDriveTask(void * state);
+void irDriveStart();
 
 /**
  * Read each of the latest IR readings and determine if any of them saw the IR river signal.
