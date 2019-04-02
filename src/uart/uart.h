@@ -26,9 +26,13 @@ freenode/#linuxandsci - JoshAshby
 //-------------------------------------------
 //Macros (defines)
 //-------------------------------------------
-#define BAUD 38400
+#define BAUD0 38400
+#define BAUD1 19200
+
+#define BAUD0_PRESCALE (((F_CPU / (BAUD0 * 16UL))) - 1)
+#define BAUD1_PRESCALE (((F_CPU / (BAUD1 * 16UL))) - 1)
+
 #define BUFF_LEN 63
-#define BAUD_PRESCALE (((F_CPU / (BAUD * 16UL))) - 1)
 
 //-------------------------------------------
 //Prototypes
@@ -48,19 +52,29 @@ uint16_t read_spot;
 
 #endif
 
-//Got through and set up the registers for UART
+//Got through and set up the registers for UART0
 void uart_start(void) {
     UCSR0B |= (1 << RXEN0) | (1 << TXEN0); //transmit side of hardware
     UCSR0C |= (1 << UCSZ00) | (1 << UCSZ01); //receive side of hardware
 
-    UBRR0L = BAUD_PRESCALE; //set the baud to 9600, have to split it into the two registers
-    UBRR0H = (BAUD_PRESCALE >> 8); //high end of baud register
+    UBRR0L = BAUD0_PRESCALE; //set the baud to BAUD0, have to split it into the two registers
+    UBRR0H = (BAUD0_PRESCALE >> 8); //high end of baud register
 
     UCSR0B |= (1 << RXCIE0); //recieve data interrupt, makes sure we don't loose data
 
 #if DEBUG
     uart_sendstr("0x04 - UART is up...");
 #endif
+}
+
+void uart1_start(void) {
+    UCSR1B |= (1 << RXEN1) | (1 << TXEN1); //transmit side of hardware
+    UCSR1C |= (1 << UCSZ10) | (1 << UCSZ11); //receive side of hardware
+
+    UBRR1L = BAUD1_PRESCALE; //set the baud to BAUD1, have to split it into the two registers
+    UBRR1H = (BAUD1_PRESCALE >> 8); //high end of baud register
+
+    UCSR1B |= (1 << RXCIE1); //recieve data interrupt, makes sure we don't loose data
 }
 
 void utos(int16_t from, char * to){
@@ -113,6 +127,20 @@ void uart_sendstr(char *data) {
         data += 1;//go to new bit in string
     }
     while ((UCSR0A & (1 << UDRE0)) == 0);//make sure the data register is cleared
+    //UDR0 = '\n';//send a new line just to be sure
+}
+
+void uart1_sendstr(char *data) {
+    /*
+    Use this to send a string, it will split it up into individual parts
+    send those parts, and then send the new line code
+    */
+    while (*data) {
+        while ((UCSR1A & (1 << UDRE1)) == 0);//make sure the data register is cleared
+        UDR1 = *data; //goes through and splits the string into individual bits, sends them
+        data += 1;//go to new bit in string
+    }
+    while ((UCSR1A & (1 << UDRE1)) == 0);//make sure the data register is cleared
     //UDR0 = '\n';//send a new line just to be sure
 }
 
