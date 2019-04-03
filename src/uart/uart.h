@@ -38,8 +38,11 @@ freenode/#linuxandsci - JoshAshby
 //Prototypes
 //-------------------------------------------
 void uart_start(void);
+void uart1_start(void);
 void uart_sendint(uint8_t data);
 void uart_sendint16(uint16_t data);
+void uart_sendchar(char data);
+void uart1_sendchar(char data);
 void uart_sendstr(char *data);
 
 void utos(int16_t from, char * to);
@@ -47,3 +50,4 @@ void utos(int16_t from, char * to);
 //-------------------------------------------
 //Variables
 //-------------------------------------------
+#endif

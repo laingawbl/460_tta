@@ -11,16 +11,19 @@
  */
 
 #include<avr/io.h>
+#include <avr/interrupt.h>
+
+#include "../rtos/tta.h"
 
 /**
  * TODO write the doxy!!
  */
-void irDriveStart();
+void irDriverStart(Timing_t when);
 
 /**
  * Read each of the latest IR readings and determine if any of them saw the IR river signal.
  * @return true if the IR river beacons are detected by any sensor; false otherwise
  */
-bool irRead();
+bool readIR();
 
 #endif

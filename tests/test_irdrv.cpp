@@ -2,11 +2,11 @@
 
 #include "../src/uart/uart.h"
 #include "../src/rtos/tta.h"
-#include "../src/drive/lightdrv.h"
+#include "../src/drive/irdrv.h"
 
 void raiseLEDOnIRReading(void * state){
 
-    bool reading = readLight();
+    bool reading = readIR();
     char rawLevelStr[7];
 
     if(reading) {
@@ -18,7 +18,7 @@ void raiseLEDOnIRReading(void * state){
         PORTB |= (1 << PORTB6);
     }
 
-    utos(readLightLevel(), rawLevelStr);
+    utos(reading, rawLevelStr);
     uart_sendstr(rawLevelStr);
     uart_sendstr("\n");
 }
@@ -30,8 +30,8 @@ int main(){
 
     uart_start();
 
-    lightDriverStart();
-    OS_CreateTask(raiseLEDOIRReading, nullptr, {50, 25});
+    irDriverStart({50, 0});
+    OS_CreateTask(raiseLEDOnIRReading, nullptr, {50, 25});
 
     OS_Run();
 
