@@ -7,6 +7,7 @@
 
 #include "../src/lib/mcu.h"
 #include "../src/uart/uart.h"
+#include "../src/drive/commdrv.h"
 
 #include <util/delay.h>
 
@@ -158,16 +159,19 @@ joy_read()
 void
 bt_trans()
 {
-    //TODO: use Casey's driver when it's in instead of this BS
+    // set up the packet
+    Base_To_Remote_Pkt_T packet = {
+        (joyPush != 0),
+        outX,
+        outY,
+        outR,
+        outV
+    };
 
-    uart1_sendchar(0x21);               // '!'
-    uart1_sendchar((outX >> 8) & 0xFF); // high byte
-    uart1_sendchar(outX & 0xFF);        // low byte
-    uart1_sendchar(0x2F);               // '/'
-    uart1_sendchar((outY >> 8) & 0xFF); // high byte
-    uart1_sendchar(outY & 0xFF);        // low byte
-    uart1_sendchar(0x2F);               // '/'
-    uart1_sendchar(joyPush & 0xFF);
+    // convert it to a string
+    char * packetString = remote_to_base_struct_to_string(*packet);
+
+    uart1_sendstr(packetString);
 }
 
 int
