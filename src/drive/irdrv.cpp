@@ -3,9 +3,6 @@
 //
 
 #include "irdrv.h"
-#include "../uart/uart.h"
-#include "roomba_sci.h"
-#include "roomba_uart.h"
 
 static TaskHandle irDrvTaskHandle = nullptr;
 
@@ -16,22 +13,22 @@ typedef struct {
 void irDriverTask(void * state) {
     uart1_sendchar(SENSORS);
     uart1_sendchar(13); // virtual wall packet
+    //TODO: un-magicnumber the previous line
+
+    // wait for uart1 by polling, sure who cares
+    while(uart1_bytes_received() != 1);
+    bool hitReading = uart1_get_byte(0);
+    ((irReading_t *)OS_GetTaskState(irDrvTaskHandle)->state)->hit = hitReading;
+
+    // clean up UART1's receive buffer; god knows who for, nobody else is using it
+    uart1_reset_receive();
 }
 
-void irDriveRStart(Timing_t when) {
+void irDriverStart(Timing_t when) {
     if(!irDrvTaskHandle)
         irDrvTaskHandle = OS_CreateTask(irDriverTask, nullptr, when);
 }
 
 bool readIR() {
     return ((irReading_t *)OS_GetTaskState(irDrvTaskHandle)->state)->hit;
-}
-
-ISR(USART1_RX_vect) {
-    char input = UDR1;
-    irReading_t * reading = ((irReading_t *)OS_GetTaskState(irDrvTaskHandle)->state);
-    if(input == 0)
-        reading->hit = false;
-    else
-        reading->hit = true;
 }

@@ -14,6 +14,8 @@
 #include <avr/interrupt.h>
 
 #include "../rtos/tta.h"
+#include "../uart/uart.h"
+#include "../lib/roomba_sci.h"
 
 /**
  * TODO write the doxy!!
