@@ -1,271 +1,178 @@
-// 460 Project 1 Phase 2 - HOST
-// The host (base station) has the joystick, photocell, and LCD.
+/**
+ * @file basestation.cpp
+ * @brief Basestation for controlling the Roomba for Project 3
+ */
 
-#include <LiquidCrystal.h>
+#include <avr/io.h>
 
-//////////
-// defines
-//////////
+#include "../src/lib/mcu.h"
+#include "../src/uart/uart.h"
 
-// scheduler defines
+#include <util/delay.h>
 
-#define SCHED_MAXTASKS 8
+#define JOY_X PORTF0
+#define JOY_Y PORTF1
+#define MOV_X PORTF2
+#define MOV_Y PORTF3
+#define JOY_DDR DDRF
+#define JOY_PIN PINF
 
-typedef void (*task_cb)();
-
-typedef struct
-{
-    int32_t period;
-    int32_t remaining_time;
-    uint8_t is_running;
-    task_cb callback;
-} task_t;
-
-task_t tasks[SCHED_MAXTASKS];
-
-uint32_t last_runtime;
-
-// scheduling periods, in milliseconds
-
-#define JOY_PERIOD 50     // 20Hz input frequency
-#define PHOTO_PERIOD 100  // photocell time constants are on the order of 100ms - but task for reading it is tiny
-#define LCD_PERIOD 100
-#define BT_PERIOD 50
-
-// inputs`
-
-//#define LCD_BTN A0      // A0 is occluded by the DFRobot LCD shield
-#define JOY_X A8
-#define JOY_Y A9
-#define JOY_PUSH 42
-
-#define PHOTO A10
-
-#define BT_BAUD 9600
-
-#define SCHED_IDLE_OUT 13
+#define JOY_PUSH PORTA0
+#define MOV_PUSH PORTA1
+#define JOY_PUSH_DDR DDRA
+#define JOY_PUSH_PIN PINA
 
 int joyNeutralX, joyNeutralY; // initial stick readings (assumed to be neutral)
+int movNeutralX, movNeutralY;
 float joySmoothX, joySmoothY;   // smoothed output values
-int joyPush;                  // joystick pushbutton value
+float movSmoothX, movSmoothY;
+int joyPush, movPush;           // joystick pushbutton values
 // even for military-grade lasing purposes, no debouncing is needed
 
 int outX = 0;
 int outY = 0;
+int outV = 0;
+int outR = 0;
 
-int JOY_DZ_X = 100;            // deadzone band widths
-int JOY_DZ_Y = 100;
+int JOY_DZ = 100;            // deadzone band widths
 float JOY_ALPHA = 0.1;          // exponential-average filter constant
 
-int photoHit = 0;             // is the photocell hit?
-int PHOTO_TRIGGER = 150;      // minimum level (between 0-1024) photocell reading to consider a "hit"
+/*
+ * Arduino dropins
+ */
 
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7); // written for the DFRobot LCD KeyPad shield
+int analogRead(int channel){
+    uint8_t high, low;
+    int result;
 
-//////////////////
-// setup functions
-//////////////////
+    // select channel (mod 8, as high bit is handled by MUX5)
+    ADMUX |= (channel & 0x07);
 
-void
-photo_setup(){
-    pinMode(PHOTO, INPUT); // ATTENTION! the photocell requires a ~10k pulldown resistor between its output side and GND.
+    // start comparison by setting ADSC
+    ADCSRA |= (1 << ADSC);
+
+    // wait for ADSC to clear on conversion finish
+    while(ADCSRA & (1 << ADSC));
+
+    low = ADCL;
+    high = ADCH;
+    result = (high << 8) | low;
+
+    return result;
 }
+
+long map(long x, long in_min, long in_max, long out_min, long out_max) {
+    // "For the mathematically inclined, here’s the whole function" - the Arduino Reference website
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+long abs(long x){
+    return (x > 0) ? x : -1*x;
+}
+
+/*
+ * setup functions
+/*/
 
 void
 joy_setup()
 {
-    pinMode(JOY_X, INPUT);
-    pinMode(JOY_Y, INPUT);
-    pinMode(JOY_PUSH, INPUT_PULLUP);
+    JOY_DDR &= ~((1 << JOY_X) | (1 << JOY_Y) | (1 << MOV_X) | (1 << MOV_Y));
+    JOY_PUSH_DDR &= ~((1 << JOY_PUSH) | (1 << MOV_PUSH));
+
+    // use Vcc as reference
+    ADMUX = (1 << REFS0);
+
+    // 128x prescale clock, we are in no rush, and enable ADC
+    ADCSRA |= ( 1 << ADPS2 ) | ( 1 << ADPS1 ) | ( 1 << ADPS0 ) | (1 << ADEN);
 
     joyNeutralX = analogRead(JOY_X);  // obtain what we assume is stick neutral position (READ: don't touch the stick when pressing RESET)
     joyNeutralY = analogRead(JOY_Y);
+    movNeutralX = analogRead(MOV_X);
+    movNeutralY = analogRead(MOV_Y);
 
     joySmoothX = joyNeutralX;
     joySmoothY = joyNeutralY;
 }
-
-void
-lcd_setup()
-{
-    lcd.begin(16, 2);
-}
-
 void
 bt_setup()
 {
-    Serial1.begin(BT_BAUD);
+    uart1_start(UART_19200);
 }
 
-void
-sched_setup()
-{
-    pinMode(SCHED_IDLE_OUT, OUTPUT);
-
-    last_runtime = millis();
-}
-
-//////////////////////
-// scheduler functions
-// this is nrqm's code
-//////////////////////
-
-void
-sched_start_task(int16_t wait, int16_t period, task_cb task)
-{
-    static uint8_t id = 0;
-    if (id < SCHED_MAXTASKS)
-    {
-        tasks[id].remaining_time = wait;
-        tasks[id].period = period;
-        tasks[id].is_running = 1;
-        tasks[id].callback = task;
-        id++;
-    }
-}
-
-void
-idle(uint32_t idlePeriod)
-{
-    digitalWrite(SCHED_IDLE_OUT, HIGH);
-    delay(idlePeriod);
-    digitalWrite(SCHED_IDLE_OUT, LOW);
-}
-
-uint32_t
-sched_dispatch()
-{
-    uint8_t i;
-    uint32_t now = millis();
-    uint32_t elapsed = now - last_runtime;
-    last_runtime = now;
-    task_cb t = NULL;
-    uint32_t idle_time = 0xFFFFFFFF;
-
-    for (i = 0; i < SCHED_MAXTASKS; i++)                  // update each task's remaining time, and identify the first ready task (if there is one).
-    {
-        if (tasks[i].is_running)
-        {
-            tasks[i].remaining_time -= elapsed;               // update the task's remaining time
-            if (tasks[i].remaining_time <= 0)
-            {
-                if (t == NULL)                                  // if this task is ready to run, and we haven't already selected a task to run, select this one.
-                {
-                    t = tasks[i].callback;
-                    tasks[i].remaining_time += tasks[i].period;
-                }
-                idle_time = 0;
-            }
-            else
-                idle_time = min((uint32_t)tasks[i].remaining_time, idle_time);
-        }
-    }
-
-    if (t != NULL)                                        // If a task was selected to run, call its function.
-        t();
-
-    return idle_time;
-}
-
-////////////
-// loop tasks
-/////////////
+/*
+ * loop tasks
+ */
 
 // Read joystick values and calculate smoothed input values, updating joySmoothX, joySmoothY, and joyPush
+
+float smooth(float oldSmooth, int raw, int neutral){
+    float newSmooth = 0;
+    if(abs(raw - neutral) > JOY_DZ) {
+        newSmooth = (oldSmooth * (1.0 - JOY_ALPHA)) + (raw * JOY_ALPHA);
+    }
+    else {
+        newSmooth = neutral;
+    }
+}
+
+float joyMap(float smooth, int neutral){
+    if (smooth >= neutral)
+        return map(smooth, neutral, 1024, 0, 400);
+    return map(smooth, 0, neutral, -400, 0);
+}
 
 void
 joy_read()
 {
+    joyPush = ! (JOY_PUSH_PIN & (1 << JOY_PUSH));  // as mentioned above, no debouncing needed
+    movPush = ! (JOY_PUSH_PIN & (1 << MOV_PUSH));
 
-    joyPush = ! (digitalRead (JOY_PUSH));             // as mentioned above, no debouncing needed
-
-    int joyRawY = analogRead (JOY_X);
     int joyRawX = analogRead (JOY_Y);
+    int joyRawY = analogRead (JOY_X);
+    int movRawX = analogRead (MOV_X);
+    int movRawY = analogRead (MOV_Y);
 
-    if(abs(joyRawX - joyNeutralX) > JOY_DZ_X) {
-        joySmoothX = (joySmoothX * (1.0 - JOY_ALPHA)) + (joyRawX * JOY_ALPHA);
-    }
-    else {
-        joySmoothX = joyNeutralX;
-    }
+    joySmoothX = smooth(joySmoothX, joyRawX, joyNeutralX);
+    joySmoothY = smooth(joySmoothY, joyRawY, joyNeutralY);
+    outX = joyMap(joySmoothX, joyNeutralX);
+    outY = joyMap(joySmoothY, joyNeutralY);
 
-    if(abs(joyRawY - joyNeutralY) > JOY_DZ_Y) {
-        joySmoothY = (joySmoothY * (1.0 - JOY_ALPHA)) + (joyRawY * JOY_ALPHA);
-    }
-    else {
-        joySmoothY = joyNeutralY;
-    }
-
-    if (joySmoothX >= joyNeutralX)
-        outX = map(joySmoothX, joyNeutralX, 1024, 0, 400);
-    else
-        outX = map(joySmoothX, 0, joyNeutralX, -400, 0);
-
-    if (joySmoothY >= joyNeutralY)
-        outY = map(joySmoothY, joyNeutralY, 1024, 0, 400);
-    else
-        outY = map(joySmoothY, 0, joyNeutralY, -400, 0);
+    movSmoothX = smooth(movSmoothX, movRawX, movNeutralX);
+    movSmoothY = smooth(movSmoothY, movRawY, movNeutralY);
+    outR = joyMap(movSmoothX, movNeutralX);
+    outV = joyMap(movSmoothY, movNeutralY);
 
 }
-
-// Read photocell value and set photoHit accordingly
-
-void photo_read()
-{
-    photoHit = (analogRead(PHOTO) > PHOTO_TRIGGER);
-}
-
-void
-lcd_drive(){
-    lcd.setCursor(0,0);     // beginning of 1st line
-    if(joyPush)
-        lcd.print("L: FIRE");
-    else
-        lcd.print("L: OFF ");
-    lcd.setCursor(8,0);     // beginning of 2nd line
-    if(photoHit)
-        lcd.print("P: HIT!");
-    else
-        lcd.print("P: MISS");
-}
-
 
 void
 bt_trans()
 {
-    // at 960 cps, an 8-byte message should take at least 8.3 milliseconds to transmit.
+    //TODO: use Casey's driver when it's in instead of this BS
 
-    Serial1.write(0x21);               // '!'
-    Serial1.write((outX >> 8) & 0xFF); // high byte
-    Serial1.write(outX & 0xFF);        // low byte
-    Serial1.write(0x2F);               // '/'
-    Serial1.write((outY >> 8) & 0xFF); // high byte
-    Serial1.write(outY & 0xFF);        // low byte
-    Serial1.write(0x2F);               // '/'
-    Serial1.write(joyPush & 0xFF);
+    uart1_sendchar(0x21);               // '!'
+    uart1_sendchar((outX >> 8) & 0xFF); // high byte
+    uart1_sendchar(outX & 0xFF);        // low byte
+    uart1_sendchar(0x2F);               // '/'
+    uart1_sendchar((outY >> 8) & 0xFF); // high byte
+    uart1_sendchar(outY & 0xFF);        // low byte
+    uart1_sendchar(0x2F);               // '/'
+    uart1_sendchar(joyPush & 0xFF);
 }
 
-/////////////////////
-// setup() and loop()
-/////////////////////
-
-void
-setup()
+int
+main()
 {
-    photo_setup();
-    sched_setup();
     joy_setup();
+    bt_setup();
 
-    sched_start_task(0, JOY_PERIOD, joy_read);
-    sched_start_task(5, PHOTO_PERIOD, photo_read);
-    sched_start_task(20, BT_PERIOD, bt_trans);
-    sched_start_task(70, LCD_PERIOD, lcd_drive);    // 20 + 50, will alternate with bt_trans
-}
+    // HAHAHA! where is your "RTOS" now, Dr. Cheng?
+    for(;;){
+        joy_read();
+        _delay_ms(25);
+        bt_trans();
+        _delay_ms(25);
+    }
 
-void
-loop()
-{
-    uint32_t idle_time = sched_dispatch();
-    if (idle_time)
-        idle(idle_time);
+    return 0;
 }
