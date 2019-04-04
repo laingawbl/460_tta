@@ -4,6 +4,9 @@
  * Works on a host / slave model
 */
 
+#ifndef __COMMDRV_H__
+#define __COMMDRV_H__
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -131,3 +134,5 @@ char *pretty_print_base_to_remote_struct(Base_To_Remote_Pkt_T *data)
     
     return string;
 }
+
+#endif
