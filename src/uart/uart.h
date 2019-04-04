@@ -29,6 +29,7 @@ void uart1_start(UART_BPS bitrate);
 void uart_sendchar(char data);
 void uart1_sendchar(char data);
 void uart_sendstr(char *data);
+void uart1_sendstr(char *data);
 
 uint8_t uart_get_byte(int index);
 uint8_t uart_bytes_received(void);
