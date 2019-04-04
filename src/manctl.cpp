@@ -7,7 +7,8 @@
 static TaskHandle manctlHandle = nullptr;
 
 void manctlTask(void * state){
-    Roomba_Drive(50, 50);
+    Roomba_Drive(50, -1);
+    uart_sendchar('d');
 }
 
 void manctlStart(Timing_t when){
