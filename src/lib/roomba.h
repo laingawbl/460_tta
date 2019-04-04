@@ -6,8 +6,12 @@
 #define __ROOMBA_H__
 
 #include <stdio.h>
+#include <avr/io.h>
+
 #include "roomba_sci.h"
 #include "sensor_struct.h"
+
+#include "mcu.h"
 
 typedef enum _rsg
 {
@@ -172,6 +176,3 @@ void Roomba_PlaySong(int songNum);
 void Roomba_Workout();
 
 #endif /* ROOMBA_H_ */
-
-
-#endif //PROJ2_ROOMBA_H

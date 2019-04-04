@@ -88,7 +88,7 @@ ISR(TIMER5_COMPA_vect){
  * \return The current RTOS tick (default 500us, defined in tta.h) since MCU boot or reset.
  */
 inline uint32_t _osGetTick(void){
-    return (seconds * (FCPU / TICK)) + (TCNT5 / (TICK / 1024));
+    return (seconds * (F_CPU / TICK)) + (TCNT5 / (TICK / 1024));
 }
 
 /**
@@ -414,7 +414,7 @@ void OS_Run(void) {
 #endif
 
 #ifdef __UART__
-    uart_start();
+    uart_start(UART_38400);
 #endif
 
     int32_t kern_tick;

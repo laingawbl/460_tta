@@ -10,7 +10,7 @@
 #ifndef __UART_H__
 #define __UART_H__
 
-#define F_CPU 16000000l
+#include "../lib/mcu.h"
 
 typedef enum _uart_bps
 {

@@ -59,5 +59,3 @@ typedef struct
 } roomba_sensor_data_t;
 
 #endif /* SENSOR_STRUCT_H_ */
-
-#endif //PROJ2_SENSORSTRUCT_H
