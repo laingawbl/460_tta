@@ -8,11 +8,12 @@ static TaskHandle manctlHandle = nullptr;
 
 void manctlTask(void * state){
     Roomba_Drive(50, -1);
-    uart_sendchar('d');
+    uart_sendstr("yo!\n");
 }
 
 void manctlStart(Timing_t when){
     Roomba_Init();
+    uart_start(UART_9600);
 
     if(!manctlHandle){
         manctlHandle = OS_CreateTask(manctlTask, nullptr, when);
