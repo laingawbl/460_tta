@@ -22,6 +22,7 @@
 #define MOV_PUSH PORTA1
 #define JOY_PUSH_DDR DDRA
 #define JOY_PUSH_PIN PINA
+#define JOY_PUSH_PORT PORTA // for internal pullups
 
 int joyNeutralX, joyNeutralY; // initial stick readings (assumed to be neutral)
 int movNeutralX, movNeutralY;
@@ -84,6 +85,7 @@ joy_setup()
 {
     JOY_DDR &= ~((1 << JOY_X) | (1 << JOY_Y) | (1 << MOV_X) | (1 << MOV_Y));
     JOY_PUSH_DDR &= ~((1 << JOY_PUSH) | (1 << MOV_PUSH));
+    JOY_PUSH_PORT |= (1 << JOY_PUSH) | (1 << MOV_PUSH);
 
     // use Vcc as reference
     ADMUX = (1 << REFS0);
@@ -104,6 +106,7 @@ void
 bt_setup()
 {
     uart1_start(UART_9600);
+    //uart_start(UART_38400);
 }
 
 /*
@@ -161,7 +164,7 @@ bt_trans()
 {
     // set up the packet
     Base_To_Remote_Pkt_T packet = {
-        (joyPush != 0),
+        (movPush && joyPush),
         outX,
         outY,
         outR,
@@ -169,18 +172,24 @@ bt_trans()
     };
 
     // convert it to a string
-    char * packetString = remote_to_base_struct_to_string(*packet);
+    char * packetString = base_to_remote_struct_to_string(&packet);
+
+    //char * prettyPacket = pretty_print_base_to_remote_struct(&packet);
 
     uart1_sendstr(packetString);
+    //uart_sendstr(prettyPacket);
+    //uart_sendchar('\n');
+
+    free(packetString);
+    //free(prettyPacket);
 }
 
 int
 main()
 {
+
     joy_setup();
     bt_setup();
-
-    char str[7];
 
     // HAHAHA! where is your "RTOS" now, Dr. Cheng?
     for(;;){

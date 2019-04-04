@@ -49,7 +49,7 @@ void uart1_start(UART_BPS bitrate) {
     // clock speeds.
     switch (bitrate) {
         case UART_9600:
-            UBRR0L = 208;
+            UBRR1L = 208;
             break;
         case UART_19200:
             UBRR1L = 103;
