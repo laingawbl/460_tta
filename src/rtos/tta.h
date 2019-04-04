@@ -84,7 +84,7 @@
 */
 
 #include <stdint.h>
-#include "mcu.h"
+#include "../lib/mcu.h"
 
 // =======
 // DEFINES
@@ -95,7 +95,7 @@
 #define TICK_US 1000
 
 // Clock cycles in a tick (e.g. 1ms = 16 kcycles at 16MHz).
-#define TICK (( FCPU / 1000000UL ) * TICK_US )
+#define TICK (( F_CPU / 1000000UL ) * TICK_US )
 
 #define MAXTASKS 8
 

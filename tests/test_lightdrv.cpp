@@ -4,7 +4,7 @@
 #include "../src/rtos/tta.h"
 #include "../src/drive/lightdrv.h"
 
-void raiseLEDOnLightReading(void * state){
+void raiseLEDOnIRReading(void * state){
 
     bool reading = readLight();
     char rawLevelStr[7];
@@ -31,8 +31,7 @@ int main(){
     uart_start();
 
     lightDriverStart();
-    OS_CreateTask(raiseLEDOnLightReading, nullptr, {50, 25});
-
+    OS_CreateTask(raiseLEDOIRReading, nullptr, {50, 25});
 
     OS_Run();
 
