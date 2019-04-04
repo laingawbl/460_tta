@@ -5,7 +5,7 @@
  \brief MCU-specific defines for the ATMega2560
 */
 
-#define FCPU 16000000UL
+#define F_CPU 16000000UL
 
 #define ONE_SECOND_1024 15625
 
