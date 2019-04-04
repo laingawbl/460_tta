@@ -13,6 +13,7 @@ void manctlTask(void * state){
 
 void manctlStart(Timing_t when){
     Roomba_Init();
+    uart_start(UART_9600);
 
     if(!manctlHandle){
         manctlHandle = OS_CreateTask(manctlTask, nullptr, when);

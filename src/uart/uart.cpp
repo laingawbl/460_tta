@@ -21,6 +21,9 @@ void uart_start(UART_BPS bitrate) {
         // See the appropriate AVR hardware specification for a table of UBBR values at different
         // clock speeds.
         switch (bitrate) {
+            case UART_9600:
+                UBRR0L = 208;
+                break;
             case UART_19200:
                 UBRR0L = 103;
                 break;
@@ -45,6 +48,9 @@ void uart1_start(UART_BPS bitrate) {
     // See the appropriate AVR hardware specification for a table of UBBR values at different
     // clock speeds.
     switch (bitrate) {
+        case UART_9600:
+            UBRR1L = 208;
+            break;
         case UART_19200:
             UBRR1L = 103;
             break;
@@ -79,7 +85,18 @@ void uart_sendstr(char *data) {
         data += 1;//go to new bit in string
     }
     while ((UCSR0A & (1 << UDRE0)) == 0);//make sure the data register is cleared
-    //UDR0 = '\n';//send a new line just to be sure
+}
+
+void uart1_sendstr(char *data) {
+    /*
+    Use this to send a string, it will split it up into individual parts
+    send those parts, and then send the new line code
+    */
+    while (*data) {
+        uart1_sendchar(*data);
+        data += 1;//go to new bit in string
+    }
+    while ((UCSR1A & (1 << UDRE1)) == 0);//make sure the data register is cleared
 }
 
 /**
