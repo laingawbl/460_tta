@@ -21,6 +21,9 @@ void uart_start(UART_BPS bitrate) {
         // See the appropriate AVR hardware specification for a table of UBBR values at different
         // clock speeds.
         switch (bitrate) {
+            case UART_9600:
+                UBRR0L = 208;
+                break;
             case UART_19200:
                 UBRR0L = 103;
                 break;
@@ -45,6 +48,9 @@ void uart1_start(UART_BPS bitrate) {
     // See the appropriate AVR hardware specification for a table of UBBR values at different
     // clock speeds.
     switch (bitrate) {
+        case UART_9600:
+            UBRR0L = 208;
+            break;
         case UART_19200:
             UBRR1L = 103;
             break;
