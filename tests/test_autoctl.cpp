@@ -1,9 +1,14 @@
 #include "../src/manctl.h"
 #include "../src/autoctl.h"
 #include "../src/drive/irdrv.h"
+#include "../src/drive/turretdrv.h"
 
-int main(){
-
+int main()
+{
+    init_turret_pwm();
+    //set_turret_x_val(50);
+    //set_turret_y_val(50);
+    
     manctlStart({100, 20});
     autoctlStart({200, 60});
 

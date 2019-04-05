@@ -4,8 +4,13 @@
 
 #include "manctl.h"
 #include "drive/commdrv.h"
+#include "drive/turretdrv.h"
+
+#include <stdio.h>
 
 #define SZ_PACKET 16
+
+inline uint32_t _osGetTick(void);
 
 static TaskHandle manctlHandle = nullptr;
 
@@ -60,6 +65,47 @@ void manctlTask(void * state){
 
             int rotSpeed = packet->lastPacket.rotate;
             int fwdSpeed = packet->lastPacket.direction;
+            
+            char str[128];
+            sprintf(str, "OCR1A %i\nOCR1B %i\nX %i\nY %i\nRot %i\nfwd %i\n\n", OCR1A, OCR1B, packet->lastPacket.turret_x_pos, packet->lastPacket.turret_y_pos, rotSpeed, fwdSpeed);
+            uart_sendstr(str);
+            
+            OCR1A += (packet->lastPacket.turret_x_pos) / 7;
+            OCR1B += (packet->lastPacket.turret_y_pos) / 7;
+            
+            if(OCR1A > 2000)
+                OCR1A = 2000;
+            if(OCR1A < 1000)
+                OCR1A = 1000;
+            if(OCR1B > 2000)
+                OCR1B = 2000;
+            if(OCR1B < 1000)
+                OCR1B = 1000;
+                
+            static int32_t laser_power = 10000;
+            static int32_t laser_lastchange = 0;
+            
+            if(packet->lastPacket.laser_power)
+            {
+                PORTB |= _BV(PB4);
+                laser_power -= _osGetTick() - laser_lastchange;
+                laser_lastchange = _osGetTick();
+                uart_sendstr("ON!\n");
+            }
+            else if(!packet->lastPacket.laser_power)
+            {
+                PORTB &= ~_BV(PB4);
+            }
+            
+            if(laser_power < 0)
+            {
+                laser_power = 0;
+                PORTB &= ~_BV(PB4);
+            }
+            
+            sprintf(str, "Laser power: %i\n", laser_power);
+            uart_sendstr(str);
+            
             if (rotSpeed == 0) {
                 if(fwdSpeed == 0){
                     packet->packetSeen = false;

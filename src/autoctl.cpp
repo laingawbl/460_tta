@@ -168,7 +168,7 @@ void autoctlTask(void *){
 void autoctlStart(Timing_t when){
     Roomba_Init();
 
-    Roomba_ChangeState(FULL_MODE);
+    //Roomba_ChangeState(FULL_MODE);
     if(!autoctlHandle){
         autoctlHandle = OS_CreateTask(autoctlTask, nullptr, when);
     }
