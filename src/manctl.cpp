@@ -11,10 +11,37 @@
 
 static TaskHandle manctlHandle = nullptr;
 
+void drive_by_speed(int fwdSpeed, int rotSpeed){
+    int V, r;
+    if(rotSpeed == 0){
+        V = fwdSpeed;
+        r = 0x8000;
+    }
+    else if(fwdSpeed == 0) {
+        V = rotSpeed;
+        r = 1;
+    }
+    else {
+        V = (int)((float) fwdSpeed / (float) rotSpeed);
+        r = (fwdSpeed + rotSpeed) * 0.75;
+    }
+
+    char str[7];
+    utos(V, str);
+    uart_sendstr(str);
+    uart_sendchar('\n');
+    utos(r, str);
+    uart_sendstr(str);
+    uart_sendchar('\n');
+
+    Roomba_Drive(V, r);
+}
+
 void manctlTask(void * state){
-    int recv = uart_bytes_received();
+    int recv = uart2_bytes_received();
 
     if(recv > SZ_PACKET) {
+        Roomba_ConfigSpotLED(LED_ON);
 
         Base_To_Remote_Pkt_T *recvPacket = (Base_To_Remote_Pkt_T *) state;
 
@@ -25,37 +52,51 @@ void manctlTask(void * state){
         // yes we are counting slash characters lolwatever
         int scount = 0;
 
-        while (uart_get_byte(start) != '^' && start < recv)
+        while (uart2_get_byte(start) != '^' && start < recv)
             start++;
 
         end = start;
-        while (uart_get_byte(end) != '$' && start < recv) {
+        while (uart2_get_byte(end) != '$' && start < recv) {
             end++;
         }
 
         for (curr = start; curr <= end; curr++) {
-            char now = uart_get_byte(curr);
+            char now = uart2_get_byte(curr);
+            //uart_sendchar(now);
             if(now == '/')
                 scount += 1;
             recvstr[curr - start] = now;
         }
 
-        uart_reset_receive();
+        uart2_reset_receive();
+
+        //uart_sendchar('\n');
 
         if(scount == 4){
             base_to_remote_string_to_struct(recvstr, recvPacket);
-            Roomba_ConfigStatusLED(GREEN);
-            Roomba_Drive(recvPacket->direction, recvPacket->rotate);
+            Roomba_ConfigDirtDetectLED(LED_OFF);
+
+            drive_by_speed(recvPacket->direction, recvPacket->rotate);
+        }
+        else {
+            /*
+            char str[7];
+            utos(scount, str);
+            uart_sendstr(str);
+            uart_sendchar('\n');*/
+            Roomba_ConfigDirtDetectLED(LED_ON);
         }
     }
-    else{
-        Roomba_ConfigStatusLED(RED);
+    else {
+        Roomba_ConfigDirtDetectLED(LED_OFF);
+        Roomba_ConfigSpotLED(LED_OFF);
     }
 }
 
 void manctlStart(Timing_t when){
     Roomba_Init();
-    uart_start(UART_9600);
+    uart_start(UART_38400);
+    uart2_start(UART_9600);
 
     if(!manctlHandle){
         manctlHandle = OS_CreateTask(manctlTask, nullptr, when);
