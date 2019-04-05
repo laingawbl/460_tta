@@ -7,6 +7,8 @@
 #define BUFF_LEN 63
 #define BAUD_PRESCALE (((F_CPU / (BAUD * 16UL))) - 1)
 
+#include <util/delay.h>
+
 void tx_uart(char *data, int size)
 {
     for(int i = 0; i < size; i++)
