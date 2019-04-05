@@ -9,6 +9,9 @@ static volatile uint8_t uart_buffer_index;
 static volatile uint8_t uart1_buffer[UART_BUFFER_SIZE];
 static volatile uint8_t uart1_buffer_index;
 
+static volatile uint8_t uart2_buffer[UART_BUFFER_SIZE];
+static volatile uint8_t uart2_buffer_index;
+
 
 //Got through and set up the registers for UART
 void uart_start(UART_BPS bitrate) {
@@ -65,6 +68,33 @@ void uart1_start(UART_BPS bitrate) {
     }
 }
 
+void uart2_start(UART_BPS bitrate) {
+    UCSR2A = _BV(U2X2);
+    UCSR2B = _BV(RXEN2) | _BV(TXEN2) | _BV(RXCIE2);
+    UCSR2C = _BV(UCSZ21) | _BV(UCSZ20);
+
+    UBRR2H = 0;	// for any speed >= 9600 bps, the UBBR value fits in the low byte.
+
+    // See the appropriate AVR hardware specification for a table of UBBR values at different
+    // clock speeds.
+    switch (bitrate) {
+        case UART_9600:
+            UBRR2L = 208;
+            break;
+        case UART_19200:
+            UBRR2L = 103;
+            break;
+        case UART_38400:
+            UBRR2L = 51;
+            break;
+        case UART_57600:
+            UBRR2L = 34;
+            break;
+        default:
+            UBRR2L = 103;
+    }
+}
+
 void uart_sendchar(char data){
     while ((UCSR0A & (1 << UDRE0)) == 0);//make sure the data register is cleared
     UDR0 = data; //goes through and splits the string into individual bits, sends them
@@ -73,6 +103,11 @@ void uart_sendchar(char data){
 void uart1_sendchar(char data){
     while ((UCSR1A & (1 << UDRE1)) == 0);
     UDR1 = data;
+}
+
+void uart2_sendchar(char data){
+    while ((UCSR2A & (1 << UDRE2)) == 0);
+    UDR2 = data;
 }
 
 void uart_sendstr(char *data) {
@@ -97,6 +132,18 @@ void uart1_sendstr(char *data) {
         data += 1;//go to new bit in string
     }
     while ((UCSR1A & (1 << UDRE1)) == 0);//make sure the data register is cleared
+}
+
+void uart2_sendstr(char *data) {
+    /*
+    Use this to send a string, it will split it up into individual parts
+    send those parts, and then send the new line code
+    */
+    while (*data) {
+        uart2_sendchar(*data);
+        data += 1;//go to new bit in string
+    }
+    while ((UCSR2A & (1 << UDRE2)) == 0);//make sure the data register is cleared
 }
 
 /**
@@ -131,6 +178,15 @@ uint8_t uart1_get_byte(int index)
     return 0;
 }
 
+uint8_t uart2_get_byte(int index)
+{
+    if (index < UART_BUFFER_SIZE)
+    {
+        return uart2_buffer[index];
+    }
+    return 0;
+}
+
 /**
  * Get the number of bytes received on UART
  *
@@ -151,6 +207,11 @@ uint8_t uart1_bytes_received(void)
     return uart1_buffer_index;
 }
 
+uint8_t uart2_bytes_received(void)
+{
+    return uart2_buffer_index;
+}
+
 /**
  * Prepares UART to receive another payload
  *
@@ -167,6 +228,15 @@ void uart_reset_receive(void)
 void uart1_reset_receive(void)
 {
     uart1_buffer_index = 0;
+}
+
+/**
+ * Prepares UART to receive another payload
+ *
+ */
+void uart2_reset_receive(void)
+{
+    uart2_buffer_index = 0;
 }
 
 void utos(int16_t from, char * to){
@@ -194,6 +264,12 @@ ISR(USART0_RX_vect){
 
 ISR(USART1_RX_vect){
     while(!(UCSR1A & (1<<RXC1)));
-    uart_buffer[uart_buffer_index] = UDR1;
-    uart_buffer_index = (uart_buffer_index + 1) % UART_BUFFER_SIZE;
+    uart1_buffer[uart1_buffer_index] = UDR1;
+    uart1_buffer_index = (uart1_buffer_index + 1) % UART_BUFFER_SIZE;
+}
+
+ISR(USART2_RX_vect){
+        while(!(UCSR2A & (1<<RXC2)));
+        uart2_buffer[uart2_buffer_index] = UDR2;
+        uart2_buffer_index = (uart2_buffer_index + 1) % UART_BUFFER_SIZE;
 }
