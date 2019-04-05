@@ -28,4 +28,6 @@ void irDriverStart(Timing_t when);
  */
 bool readIR();
 
+bool readBumper();
+
 #endif

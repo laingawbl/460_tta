@@ -97,19 +97,19 @@
 // Clock cycles in a tick (e.g. 1ms = 16 kcycles at 16MHz).
 #define TICK (( F_CPU / 1000000UL ) * TICK_US )
 
-#define MAXTASKS 8
+#define MAXTASKS 24
 
 // Size of the persistent state blocks allocated to each task, in bytes.
 #define STATESIZE 32
 
 // Threshold between normal operation and jitter, in ticks.
-#define MINJITTER_TICKS 4
+#define MINJITTER_TICKS 10
 
 // Threshold between mere jitter and a timing error, in ticks.
-#define MAXJITTER_TICKS 40
+#define MAXJITTER_TICKS 100
 
 // Number of jitter "incidents" to allow before aborting with a systematic jitter error.
-#define MAXJITTER_COUNT 10
+#define MAXJITTER_COUNT 40
 
 // =======================
 // INSTRUMENTATION DEFINES

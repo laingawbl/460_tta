@@ -11,6 +11,8 @@
 
 #include <avr/io.h>
 
+#include "../rtos/tta.h"
+
 #define LIGHTDRV_PIN    PORTF0 //Arduino MEGA Analog Pin A0
 #define LIGHTDRV_INPUT  PINF
 #define LIGHTDRV_DDR    DDRF
@@ -21,7 +23,7 @@
  * @brief start the LIGHTDRV task.
  * TODO: how often should LIGHTDRV run?
  */
-void lightDriverStart();
+void lightDriverStart(Timing_t when);
 
 /**
  * @brief get the latest reading from the LIGHTDRV task.

@@ -3,7 +3,6 @@
 //
 
 #include "lightdrv.h"
-#include "../rtos/tta.h"
 
 static TaskHandle lightDrvTaskHandle = nullptr;
 
@@ -34,7 +33,7 @@ void _lightDrvTask(void * state){
     reading->hit = (result > LIGHTDRV_COMPARE);
 }
 
-void lightDriverStart(){
+void lightDriverStart(Timing_t when){
     // set pin data direction to 0 (input)
     LIGHTDRV_DDR &= ~(1<<LIGHTDRV_PIN);
 
@@ -46,28 +45,15 @@ void lightDriverStart(){
 
     // start only one instance of LIGHTDRV
     if(!lightDrvTaskHandle)
-        lightDrvTaskHandle = OS_CreateTask(_lightDrvTask, nullptr, {50, 0});
+        lightDrvTaskHandle = OS_CreateTask(_lightDrvTask, nullptr, when);
 }
 
 bool readLight(){
-    StateHandle handle = OS_GetTaskState(lightDrvTaskHandle);
-    if(handle) {
-        lightReading_t *reading = (lightReading_t *) (handle->state);
-        return reading->hit;
-    }
-
-    //TODO: raise application-level error if we can't retrieve the LIGHTDRV state handle
-    return false;
+    lightReading_t *reading = (lightReading_t *) OS_GetTaskState(lightDrvTaskHandle)->state;
+    return reading->hit;
 }
 
 int readLightLevel(){
-    StateHandle handle = OS_GetTaskState(lightDrvTaskHandle);
-    if(handle) {
-        lightReading_t *reading = (lightReading_t *) handle->state;
-        return reading->rawVal;
-    }
-
-    //TODO: raise application-level error if we can't retrieve the LIGHTDRV state handle
-    return -1;
-
+    lightReading_t *reading = (lightReading_t *) OS_GetTaskState(lightDrvTaskHandle)->state;
+    return reading->rawVal;
 }

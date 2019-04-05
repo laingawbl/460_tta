@@ -28,10 +28,10 @@ int main(){
     DDRB |= (1 << PORTB7);
     DDRB |= (1 << PORTB6);
 
-    uart_start();
+    uart_start(UART_38400);
 
     lightDriverStart();
-    OS_CreateTask(raiseLEDOIRReading, nullptr, {50, 25});
+    OS_CreateTask(raiseLEDOnIRReading, nullptr, {50, 25});
 
     OS_Run();
 

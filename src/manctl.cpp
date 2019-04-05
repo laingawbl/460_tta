@@ -5,49 +5,28 @@
 #include "manctl.h"
 #include "drive/commdrv.h"
 
-
 #define SZ_PACKET 16
 
-
 static TaskHandle manctlHandle = nullptr;
+
+typedef struct {
+    Base_To_Remote_Pkt_T lastPacket;
+    bool packetSeen;
+    int V;
+    int r;
+} manCtlPacket;
 
 long abs(long x){
     return (x > 0) ? x : (-1*x);
 }
 
-void drive_by_speed(int fwdSpeed, int rotSpeed){
-    int V, r;
-    if(rotSpeed == 0){
-        V = fwdSpeed;
-        r = 0x8000;
-    }
-    else if(fwdSpeed == 0) {
-        V = rotSpeed;
-        r = 1;
-    }
-    else {
-        V = (fwdSpeed + rotSpeed) / 2;
-        r = 500 / rotSpeed;
-    }
-
-    char str[7];
-    utos(V, str);
-    uart_sendstr(str);
-    uart_sendchar('\n');
-    utos(r, str);
-    uart_sendstr(str);
-    uart_sendchar('\n');
-
-    Roomba_Drive(V, r);
-}
-
 void manctlTask(void * state){
     int recv = uart2_bytes_received();
 
-    if(recv > SZ_PACKET) {
-        Roomba_ConfigSpotLED(LED_ON);
+    manCtlPacket * packet = (manCtlPacket *) state;
+    packet->packetSeen = false;
 
-        Base_To_Remote_Pkt_T *recvPacket = (Base_To_Remote_Pkt_T *) state;
+    if(recv > SZ_PACKET) {
 
         char recvstr[32];
         int start = 0, end;
@@ -66,43 +45,60 @@ void manctlTask(void * state){
 
         for (curr = start; curr <= end; curr++) {
             char now = uart2_get_byte(curr);
-            //uart_sendchar(now);
-            if(now == '/')
+            if (now == '/')
                 scount += 1;
             recvstr[curr - start] = now;
         }
 
         uart2_reset_receive();
 
-        //uart_sendchar('\n');
+        if (scount == 4) {
+            packet->packetSeen = true;
 
-        if(scount == 4){
-            base_to_remote_string_to_struct(recvstr, recvPacket);
+            base_to_remote_string_to_struct(recvstr, &(packet->lastPacket));
             Roomba_ConfigDirtDetectLED(LED_OFF);
 
-            drive_by_speed(recvPacket->direction, recvPacket->rotate);
-        }
-        else {
-            /*
-            char str[7];
-            utos(scount, str);
-            uart_sendstr(str);
-            uart_sendchar('\n');*/
+            int rotSpeed = packet->lastPacket.rotate;
+            int fwdSpeed = packet->lastPacket.direction;
+            if (rotSpeed == 0) {
+                if(fwdSpeed == 0){
+                    packet->packetSeen = false;
+                }
+                packet->V = fwdSpeed;
+                packet->r = 0x8000;
+            } else if (fwdSpeed == 0) {
+                packet->V = rotSpeed;
+                packet->r = -1;
+            } else {
+                packet->V = (fwdSpeed + rotSpeed) / 2;
+                packet->r = 500 / rotSpeed;
+            }
+        } else {
             Roomba_ConfigDirtDetectLED(LED_ON);
         }
     }
     else {
         Roomba_ConfigDirtDetectLED(LED_OFF);
-        Roomba_ConfigSpotLED(LED_OFF);
     }
 }
 
 void manctlStart(Timing_t when){
-    Roomba_Init();
     uart_start(UART_38400);
     uart2_start(UART_9600);
 
     if(!manctlHandle){
         manctlHandle = OS_CreateTask(manctlTask, nullptr, when);
     }
+}
+
+bool haveManualControl(){
+    return ((manCtlPacket *)OS_GetTaskState(manctlHandle)->state)->packetSeen;
+}
+
+int readManualV(){
+    return ((manCtlPacket *)OS_GetTaskState(manctlHandle)->state)->V;
+}
+
+int readManualR(){
+    return ((manCtlPacket *)OS_GetTaskState(manctlHandle)->state)->r;
 }

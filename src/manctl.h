@@ -11,8 +11,15 @@
 #include "rtos/tta.h"
 #include "lib/roomba.h"
 #include "uart/uart.h"
+#include "deathmon.h"
 #include "drive/commdrv.h"
 
 void manctlTask(void *);
 
 void manctlStart(Timing_t when);
+
+bool haveManualControl();
+
+int readManualV();
+
+int readManualR();
