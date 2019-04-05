@@ -12,29 +12,50 @@
 static TaskHandle manctlHandle = nullptr;
 
 void manctlTask(void * state){
+    int recv = uart_bytes_received();
 
-    Base_To_Remote_Pkt_T recvPacket;
+    if(recv > SZ_PACKET) {
 
-    while (uart1_bytes_received() < SZ_PACKET);
-    recvPacket.laser_power  = (uart1_get_byte(1) << 8) | (uart1_get_byte(2));
-    recvPacket.turret_x_pos = (uart1_get_byte(4) << 8) | (uart1_get_byte(5));
-    recvPacket.turret_y_pos = (uart1_get_byte(7) << 8) | (uart1_get_byte(8));
-    recvPacket.rotate       = (uart1_get_byte(10) << 8) | (uart1_get_byte(11));
-    recvPacket.direction    = (uart1_get_byte(13) << 8) | (uart1_get_byte(14));
+        Base_To_Remote_Pkt_T *recvPacket = (Base_To_Remote_Pkt_T *) state;
 
-    char * pretty = pretty_print_base_to_remote_struct(&recvPacket);
+        char recvstr[32];
+        int start = 0, end;
+        int curr = 0;
 
-    uart_sendstr(pretty);
+        // yes we are counting slash characters lolwatever
+        int scount = 0;
 
-    free(pretty);
+        while (uart_get_byte(start) != '^' && start < recv)
+            start++;
 
-    uart1_reset_receive();
+        end = start;
+        while (uart_get_byte(end) != '$' && start < recv) {
+            end++;
+        }
+
+        for (curr = start; curr <= end; curr++) {
+            char now = uart_get_byte(curr);
+            if(now == '/')
+                scount += 1;
+            recvstr[curr - start] = now;
+        }
+
+        uart_reset_receive();
+
+        if(scount == 4){
+            base_to_remote_string_to_struct(recvstr, recvPacket);
+            Roomba_ConfigStatusLED(GREEN);
+            Roomba_Drive(recvPacket->direction, recvPacket->rotate);
+        }
+    }
+    else{
+        Roomba_ConfigStatusLED(RED);
+    }
 }
 
 void manctlStart(Timing_t when){
     Roomba_Init();
-    uart1_start(UART_9600);
-    uart_start(UART_38400);
+    uart_start(UART_9600);
 
     if(!manctlHandle){
         manctlHandle = OS_CreateTask(manctlTask, nullptr, when);

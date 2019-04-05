@@ -194,6 +194,6 @@ ISR(USART0_RX_vect){
 
 ISR(USART1_RX_vect){
     while(!(UCSR1A & (1<<RXC1)));
-    uart_buffer[uart_buffer_index] = UDR1;
-    uart_buffer_index = (uart_buffer_index + 1) % UART_BUFFER_SIZE;
+    uart1_buffer[uart1_buffer_index] = UDR1;
+    uart1_buffer_index = (uart1_buffer_index + 1) % UART_BUFFER_SIZE;
 }

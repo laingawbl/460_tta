@@ -37,6 +37,8 @@ int base_to_remote_string_to_struct(char *string, Base_To_Remote_Pkt_T *data) //
     trimmed_string[str_length] = 0x00;
 
     sscanf(trimmed_string, BASE_TO_REMOTE_POINTER_FMT, BASE_TO_REMOTE_POINTER_PARAMS);
+
+    free(trimmed_string);
 }
 
 int remote_to_base_string_to_struct(char *string, Remote_To_Base_Pkt_T *data) // Must stay named "data" to work with macros
@@ -54,6 +56,8 @@ int remote_to_base_string_to_struct(char *string, Remote_To_Base_Pkt_T *data) //
     trimmed_string[str_length] = 0x00;
 
     sscanf(trimmed_string, REMOTE_TO_BASE_POINTER_FMT, REMOTE_TO_BASE_POINTER_PARAMS);
+
+    free(trimmed_string);
 }
 
 char *pretty_print_remote_to_base_struct(Remote_To_Base_Pkt_T *data)
