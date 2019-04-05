@@ -32,7 +32,7 @@ void irDriverTask(void * state) {
 }
 
 void irDriverStart(Timing_t when) {
-    uart_sendstr("start!\n");
+    uart_sendstr("start IRDRV\n");
     if(!irDrvTaskHandle)
         irDrvTaskHandle = OS_CreateTask(irDriverTask, nullptr, when);
 }

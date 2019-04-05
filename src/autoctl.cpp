@@ -53,7 +53,6 @@ void executeBehaviour(Behaviour what){
 
 Behaviour avoidObstacles(bool irHit, bool bumperHit){
     bool hitAny = (irHit || bumperHit);
-
     switch(avoidState){
         case CLEAR:
             if(hitAny){
@@ -61,7 +60,7 @@ Behaviour avoidObstacles(bool irHit, bool bumperHit){
                 return DRIVE_BACK;
             }
             else {
-                return DRIVE_STRAIGHT;
+                return NOTHING;
             }
 
         case HIT_OBSTACLE:
@@ -94,7 +93,7 @@ Behaviour avoidObstacles(bool irHit, bool bumperHit){
             }
             else {
                 avoidState = CLEAR;
-                return DRIVE_STRAIGHT;
+                return NOTHING;
             }
 
         default:
@@ -104,11 +103,31 @@ Behaviour avoidObstacles(bool irHit, bool bumperHit){
 }
 
 void autoctlTask(void *){
+
+    bool irHit = readIR();
+    if(irHit){
+        uart_sendstr("\tAUTOCTL: got IR\n");
+    }
+    bool bumperHit = readBumper();
+    if(irHit){
+        uart_sendstr("\tAUTOCTL: got bumper\n");
+    }
+    Behaviour nextAction = avoidObstacles(irHit, bumperHit);
+
     if(ctlMode == MANUAL){
-        if(haveManualControl()){
+        // override the user if we are close to death
+        if(nextAction != NOTHING){
+            uart_sendstr("got an emergency action!: switching to AUTO\n");
+            ctlMode = AUTO;
+            backoffCounter = AUTO_BACKOFF;
+            executeBehaviour(nextAction);
+        }
+        // execute the user's packet if a nonzero packet was sent
+        else if(haveManualControl()){
             backoffCounter = MANUAL_BACKOFF;
             Roomba_Drive(readManualV(), readManualR());
         }
+        // hold still and decrement the backoff counter until we enter AUTO mode
         else {
             Roomba_Drive(0,0);
             backoffCounter--;
@@ -130,12 +149,14 @@ void autoctlTask(void *){
         }
         else {
             backoffCounter = AUTO_BACKOFF;
-            bool irHit = readIR();
-            bool bumperHit = readBumper();
-            Behaviour nextAction;
-            nextAction = avoidObstacles(irHit, bumperHit);
+            if(nextAction == NOTHING){
+                uart_sendstr("driving straight\n");
+                executeBehaviour(DRIVE_STRAIGHT);
+            }
+            else{
+                executeBehaviour(nextAction);
+            }
 
-            executeBehaviour(nextAction);
         }
     }
 }
