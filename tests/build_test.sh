@@ -3,9 +3,11 @@ rm *.o
 
 pname="${1%.*}"
 avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o uart.o ../src/uart/uart.cpp
+avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o irdrv.o ../src/drive/irdrv.cpp
 avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o commdrv.o ../src/drive/commdrv.cpp
 avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o roomba.o ../src/lib/roomba.cpp
 avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o manctl.o ../src/manctl.cpp
+avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o autoctl.o ../src/autoctl.cpp
 avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o tta.o ../src/rtos/tta.cpp
 avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o turretdrv.o ../src/drive/turretdrv.cpp
 avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o "$pname".o "$pname".cpp
