@@ -6,6 +6,7 @@ avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o uart.o ../src/uart/ua
 avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o roomba.o ../src/lib/roomba.cpp
 avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o manctl.o ../src/manctl.cpp
 avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o tta.o ../src/rtos/tta.cpp
+avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o turretdrv.o ../src/drive/turretdrv.cpp
 avr-g++ -c -std=c++0x -Os -mmcu=atmega2560 -Wa,--gstabs -o "$pname".o "$pname".cpp
 avr-g++  -mmcu=atmega2560 -o "$pname".elf *.o
 avr-objcopy -j .text -j .data -O ihex "$pname".elf "$pname".flash.hex
