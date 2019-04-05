@@ -11,6 +11,7 @@
 #define __UART_H__
 
 #include "../lib/mcu.h"
+#include <stdint.h>
 
 typedef enum _uart_bps
 {
