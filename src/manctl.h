@@ -11,6 +11,7 @@
 #include "rtos/tta.h"
 #include "lib/roomba.h"
 #include "uart/uart.h"
+#include "deathmon.h"
 #include "drive/commdrv.h"
 
 void manctlTask(void *);

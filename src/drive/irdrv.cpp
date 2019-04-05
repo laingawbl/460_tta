@@ -14,7 +14,7 @@ typedef struct {
 void irDriverTask(void * state) {
     // wait for uart1 by polling, sure who cares
     uint8_t recv = uart1_bytes_received();
-    if (recv > 2) {
+    if (recv >= 2) {
         bool hitReading = uart1_get_byte(0);
         bool wallReading = uart1_get_byte(1);
         ((irReading_t *) OS_GetTaskState(irDrvTaskHandle)->state)->hit = hitReading;
@@ -23,6 +23,7 @@ void irDriverTask(void * state) {
         // clean up UART1's receive buffer; god knows who for, nobody else is using it
         uart1_reset_receive();
     }
+
 
     uart1_sendchar(149);
     uart1_sendchar(2);  // number of bytes in query

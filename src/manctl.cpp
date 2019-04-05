@@ -27,7 +27,6 @@ void manctlTask(void * state){
     packet->packetSeen = false;
 
     if(recv > SZ_PACKET) {
-        Roomba_ConfigSpotLED(LED_ON);
 
         char recvstr[32];
         int start = 0, end;
@@ -80,7 +79,6 @@ void manctlTask(void * state){
     }
     else {
         Roomba_ConfigDirtDetectLED(LED_OFF);
-        Roomba_ConfigSpotLED(LED_OFF);
     }
 }
 

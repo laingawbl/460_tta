@@ -4,10 +4,14 @@
 
 int main(){
 
-    manctlStart({100, 0});
-    autoctlStart({100, 50});
+    manctlStart({100, 20});
+    autoctlStart({200, 60});
 
-    irDriverStart({50, 20});
+    irDriverStart({50, 0});
+    lightDriverStart({50, 10});
+
+    modeSwitchStart({30000, 15170});
+    deathMonStart({200, 160});
 
     OS_Run();
 
