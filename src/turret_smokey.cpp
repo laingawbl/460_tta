@@ -1,4 +1,5 @@
 #include<avr/io.h>
+#include "drive/turretdrv.h"
 
 
 #define F_CPU 16000000l
@@ -25,36 +26,21 @@ void init_uart()
     UBRR0H = (BAUD_PRESCALE >> 8); //high end of baud register
 }
 
-#include<avr/io.h>
-#include <util/delay.h>
 
-
+// Words on pins 11 (x) and 12 (y)
 int main (void) {
-  //Set testFactor to 1 for real life or to a higher value
-  //to speed up the simulation
-  int testFactor=1; //ICR1 and OCR1A are divided by this value
-
-
-  //Initialize PORTB
-
-  PORTB=0b00100000;  //start with OC1A high
-  DDRB= 0xFF;  //set OC1A to output (among others)
-
-  ICR1=20000/testFactor;
-  OCR1A=1000/testFactor; //set 1ms pulse  1000=1ms  2000=2ms
-  TCCR1A=(1<<COM1A1);//COM1A1 Clear OCnA when match counting up,Set on 
-
-  TCCR1B=(1<<WGM13)|(1<<CS11);// Phase and Freq correct ICR1=Top
-
-while (1)
+    init_turret_pwm();
+    while (1)
       {
 
-      OCR1A = 1000; //leave servo at min rotation
+      set_turret_x_val(0); //leave servo at min rotation
+      set_turret_y_val(0); //leave servo at min rotation
       _delay_ms(1000);
-      OCR1A = 2000; //leave serve at max rotation
+      set_turret_x_val(100); //leave serve at max rotation
+      set_turret_y_val(100); //leave serve at max rotation
     _delay_ms(1000);
 
-      };
+      }
 
 
 }
