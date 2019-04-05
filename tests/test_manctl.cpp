@@ -2,7 +2,7 @@
 
 int main(){
 
-    manctlStart({50, 25});
+    manctlStart({100, 25});
 
     OS_Run();
 

@@ -11,6 +11,10 @@
 
 static TaskHandle manctlHandle = nullptr;
 
+long abs(long x){
+    return (x > 0) ? x : (-1*x);
+}
+
 void drive_by_speed(int fwdSpeed, int rotSpeed){
     int V, r;
     if(rotSpeed == 0){
@@ -22,8 +26,8 @@ void drive_by_speed(int fwdSpeed, int rotSpeed){
         r = 1;
     }
     else {
-        V = (int)((float) fwdSpeed / (float) rotSpeed);
-        r = (fwdSpeed + rotSpeed) * 0.75;
+        V = (fwdSpeed + rotSpeed) / 2;
+        r = 500 / rotSpeed;
     }
 
     char str[7];
