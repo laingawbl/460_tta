@@ -54,12 +54,17 @@ void manctlTask(void * state){
         uart2_reset_receive();
 
         if (scount == 4) {
+            packet->packetSeen = true;
+
             base_to_remote_string_to_struct(recvstr, &(packet->lastPacket));
             Roomba_ConfigDirtDetectLED(LED_OFF);
 
             int rotSpeed = packet->lastPacket.rotate;
             int fwdSpeed = packet->lastPacket.direction;
             if (rotSpeed == 0) {
+                if(fwdSpeed == 0){
+                    packet->packetSeen = false;
+                }
                 packet->V = fwdSpeed;
                 packet->r = 0x8000;
             } else if (fwdSpeed == 0) {
@@ -69,7 +74,6 @@ void manctlTask(void * state){
                 packet->V = (fwdSpeed + rotSpeed) / 2;
                 packet->r = 500 / rotSpeed;
             }
-            packet->packetSeen = true;
         } else {
             Roomba_ConfigDirtDetectLED(LED_ON);
         }

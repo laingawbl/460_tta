@@ -1,6 +1,9 @@
 
 #include "autoctl.h"
 
+#define MANUAL_BACKOFF 16;
+#define AUTO_BACKOFF 2;
+
 static TaskHandle autoctlHandle = nullptr;
 
 typedef enum {
@@ -18,7 +21,15 @@ typedef enum {
     AVOIDING2
 } avoidStateEnum;
 
+typedef enum {
+    MANUAL,
+    AUTO
+} Mode;
+
 static avoidStateEnum avoidState = CLEAR;
+
+static int backoffCounter = MANUAL_BACKOFF;
+static Mode ctlMode = MANUAL;
 
 void executeBehaviour(Behaviour what){
     switch(what){
@@ -29,10 +40,10 @@ void executeBehaviour(Behaviour what){
             Roomba_Drive(1000, 1);
             break;
         case DRIVE_STRAIGHT:
-            Roomba_Drive(300, 0x8000);
+            Roomba_Drive(200, 0x8000);
             break;
         case DRIVE_BACK:
-            Roomba_Drive(-300, 0x8000);
+            Roomba_Drive(-200, 0x8000);
             break;
         case NOTHING:
         default:
@@ -93,16 +104,39 @@ Behaviour avoidObstacles(bool irHit, bool bumperHit){
 }
 
 void autoctlTask(void *){
-    if(haveManualControl()){
-        Roomba_Drive(readManualV(), readManualR());
+    if(ctlMode == MANUAL){
+        if(haveManualControl()){
+            backoffCounter = MANUAL_BACKOFF;
+            Roomba_Drive(readManualV(), readManualR());
+        }
+        else {
+            Roomba_Drive(0,0);
+            backoffCounter--;
+            if(backoffCounter == 0){
+                uart_sendstr("switching to AUTO\n");
+                ctlMode = AUTO;
+                backoffCounter = AUTO_BACKOFF;
+            }
+        }
     }
-    else {
-        bool irHit = readIR();
-        bool bumperHit = readBumper();
-        Behaviour nextAction;
-        nextAction = avoidObstacles(irHit, bumperHit);
+    else {     // ctlMode = AUTO
+        if(haveManualControl()){
+            backoffCounter--;
+            if(backoffCounter == 0){
+                uart_sendstr("switching to MANUAL\n");
+                ctlMode = MANUAL;
+                backoffCounter = MANUAL_BACKOFF;
+            }
+        }
+        else {
+            backoffCounter = AUTO_BACKOFF;
+            bool irHit = readIR();
+            bool bumperHit = readBumper();
+            Behaviour nextAction;
+            nextAction = avoidObstacles(irHit, bumperHit);
 
-        executeBehaviour(nextAction);
+            executeBehaviour(nextAction);
+        }
     }
 }
 

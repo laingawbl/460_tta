@@ -4,10 +4,10 @@
 
 int main(){
 
-    autoctlStart({200, 150});
-    manctlStart({200, 50});
+    manctlStart({100, 0});
+    autoctlStart({100, 50});
 
-    irDriverStart({50, 25});
+    irDriverStart({50, 20});
 
     OS_Run();
 
