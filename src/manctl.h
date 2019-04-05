@@ -16,3 +16,9 @@
 void manctlTask(void *);
 
 void manctlStart(Timing_t when);
+
+bool haveManualControl();
+
+int readManualV();
+
+int readManualR();
