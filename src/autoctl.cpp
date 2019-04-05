@@ -1,14 +1,14 @@
 
 #include "autoctl.h"
 
-static TaskHandle manctlHandle = nullptr;
+static TaskHandle autoctlHandle = nullptr;
 
 typedef enum {
-    NOTHING = 0
+    NOTHING = 0,
     TURN_LEFT,
     TURN_RIGHT,
     DRIVE_STRAIGHT,
-    DRIVE_BACK,
+    DRIVE_BACK
 } Behaviour;
 
 typedef enum {

@@ -26,7 +26,7 @@ void manctlTask(void * state){
     manCtlPacket * packet = (manCtlPacket *) state;
     packet->packetSeen = false;
 
-    if(recv > SZ_PACKET)
+    if(recv > SZ_PACKET) {
         Roomba_ConfigSpotLED(LED_ON);
 
         char recvstr[32];
@@ -46,32 +46,31 @@ void manctlTask(void * state){
 
         for (curr = start; curr <= end; curr++) {
             char now = uart2_get_byte(curr);
-            if(now == '/')
+            if (now == '/')
                 scount += 1;
             recvstr[curr - start] = now;
         }
 
         uart2_reset_receive();
 
-        if(scount == 4){
+        if (scount == 4) {
             base_to_remote_string_to_struct(recvstr, &(packet->lastPacket));
             Roomba_ConfigDirtDetectLED(LED_OFF);
 
-            if(rotSpeed == 0){
+            int rotSpeed = packet->lastPacket.rotate;
+            int fwdSpeed = packet->lastPacket.direction;
+            if (rotSpeed == 0) {
                 packet->V = fwdSpeed;
                 packet->r = 0x8000;
-            }
-            else if(fwdSpeed == 0) {
+            } else if (fwdSpeed == 0) {
                 packet->V = rotSpeed;
                 packet->r = -1;
-            }
-            else {
+            } else {
                 packet->V = (fwdSpeed + rotSpeed) / 2;
                 packet->r = 500 / rotSpeed;
             }
             packet->packetSeen = true;
-        }
-        else {
+        } else {
             Roomba_ConfigDirtDetectLED(LED_ON);
         }
     }
