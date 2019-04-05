@@ -85,6 +85,11 @@ void manctlTask(void * state){
             static int32_t laser_power = 10000;
             static int32_t laser_lastchange = 0;
             
+            if((PORTB && _BV(PB4) && !packet->lastPacket.laser_power) || (!((PORTB && _BV(PB4)) && packet->lastPacket.laser_power)))
+            {
+                laser_lastchange = _osGetTick();
+            }
+            
             if(packet->lastPacket.laser_power)
             {
                 PORTB |= _BV(PB4);
